@@ -6,7 +6,7 @@
 
 (function () { 'use strict';
 
-function simpleheat(canvas) {
+function simpleheat(canvas, fogStyle) {
     // jshint newcap: false, validthis: true
     if (!(this instanceof simpleheat)) { return new simpleheat(canvas); }
 
@@ -15,6 +15,9 @@ function simpleheat(canvas) {
     this._ctx = canvas.getContext('2d');
     this._width = canvas.width;
     this._height = canvas.height;
+
+    // Fog default style
+    this._fogStyle = fogStyle || "rgba(255, 255, 255, 0.85)";
 
     this._max = 1;
     this._data = [];
@@ -95,6 +98,13 @@ simpleheat.prototype = {
         return this;
     },
 
+    makeTheFog: function(ctx) {
+      // Make the `Fog`
+      ctx.fillStyle = this._fogStyle;
+      ctx.fillRect(0, 0, this._width, this._height);
+      ctx.globalCompositeOperation = 'destination-out';
+    },
+
     draw: function (minOpacity) {
         if (!this._circle) {
             this.radius(this.defaultRadius);
@@ -107,6 +117,8 @@ simpleheat.prototype = {
 
         ctx.clearRect(0, 0, this._width, this._height);
 
+        this.makeTheFog(ctx);
+
         // draw a grayscale heatmap by putting a blurred circle at each data point
         for (var i = 0, len = this._data.length, p; i < len; i++) {
             p = this._data[i];
@@ -115,10 +127,15 @@ simpleheat.prototype = {
             ctx.drawImage(this._circle, p[0] - this._r, p[1] - this._r);
         }
 
+        // Reset to default config.
+        ctx.globalAlpha = 1;
+        ctx.globalCompositeOperation = 'source-over';
+
+        // TEMPORARY DISABLED
         // colorize the heatmap, using opacity value of each pixel to get the right color from our gradient
-        var colored = ctx.getImageData(0, 0, this._width, this._height);
-        this._colorize(colored.data, this._grad);
-        ctx.putImageData(colored, 0, 0);
+        // var colored = ctx.getImageData(0, 0, this._width, this._height);
+        // this._colorize(colored.data, this._grad);
+        // ctx.putImageData(colored, 0, 0);
 
         return this;
     },
